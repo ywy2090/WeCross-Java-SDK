@@ -53,7 +53,9 @@ public class PerformanceManager {
         this.threadPool.setQueueCapacity(count.intValue());
         this.threadPool.initialize();
 
-        this.limiter = RateLimiter.create(qps.intValue());
+        // this.limiter = RateLimiter.create(qps.intValue());
+        this.limiter = RateLimiter.create(qps.intValue() / 10);
+
         this.area = count.intValue() / 10;
         this.area = this.area == 0 ? 1 : this.area;
     }
@@ -67,6 +69,25 @@ public class PerformanceManager {
                     "===================================================================");
             long startTime = System.currentTimeMillis();
             AtomicInteger sended = new AtomicInteger(0);
+
+            Thread thread =
+                    new Thread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    while (limiter.getRate() < qps.intValue()) {
+                                        try {
+                                            Thread.sleep(3000);
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                        limiter.setRate(limiter.getRate() + qps.intValue() / 10);
+                                        System.out.println("rate: {}" + limiter.getRate());
+                                    }
+                                }
+                            });
+
+            thread.start();
 
             for (Integer i = 0; i < count.intValue(); ++i) {
                 final int index = i;
@@ -114,12 +135,13 @@ public class PerformanceManager {
     }
 
     private PerformanceSuiteCallback buildCallback(PerformanceCollector collector) {
-        try {
+        /*try {
             concurrentLimiter.acquire(1);
         } catch (Exception e) {
             System.out.println("Error: concurrentLimiter could not acquire: " + e);
             System.exit(1);
         }
+        */
         return new PerformanceSuiteCallback() {
             private Long startTimestamp = System.currentTimeMillis();
 
@@ -127,7 +149,7 @@ public class PerformanceManager {
             public void onSuccess(String message) {
                 Long cost = System.currentTimeMillis() - this.startTimestamp;
                 collector.onMessage(PerformanceCollector.Status.SUCCESS, cost);
-                concurrentLimiter.release(1);
+                // concurrentLimiter.release(1);
             }
 
             @Override
@@ -135,7 +157,7 @@ public class PerformanceManager {
                 Long cost = System.currentTimeMillis() - this.startTimestamp;
                 System.out.println("On failed: " + message);
                 collector.onMessage(PerformanceCollector.Status.FAILED, cost);
-                concurrentLimiter.release(1);
+                // concurrentLimiter.release(1);
             }
         };
     }

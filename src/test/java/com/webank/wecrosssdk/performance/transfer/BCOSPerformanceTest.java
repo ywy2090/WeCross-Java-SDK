@@ -18,6 +18,8 @@ public class BCOSPerformanceTest {
     public static void usage() {
         System.out.println("Usage:");
         System.out.println(
+                " \t java -cp conf/:lib/*:apps/* com.webank.wecrosssdk.performance.transfer.BCOSPerformanceTest [accountName] status [count] [qps] [poolSize]");
+        System.out.println(
                 " \t java -cp conf/:lib/*:apps/* com.webank.wecrosssdk.performance.transfer.BCOSPerformanceTest [accountName] sendTransaction [count] [qps] [poolSize] [userFile]");
         System.out.println("Example:");
         System.out.println(
